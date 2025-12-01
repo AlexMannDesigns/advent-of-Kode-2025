@@ -27,18 +27,15 @@ fun main() {
             // we save the current dial position for a later check
             val dialStart = dial
 
-            // if clicks is over 99, we need to decrement by 100 until it isn't
-            // each 100 clicks is a full 'spin' and passes zero once each time
-            while (clicks > 99) {
-                clicks -= 100
-                zeroCount++
+            // if clicks > 99 we need to add the number of full 'spins' of the dial to get to a number below 100
+            // we can then just work with the modulus result
+            if (clicks > 99) {
+                zeroCount += clicks / 100
+                clicks %= 100
             }
 
             // we then move the dial by the clicks amount
-            if (direction == 'L') {
-                clicks *= -1
-            }
-            dial += clicks
+            dial += if (direction == 'L') { clicks * -1 } else { clicks }
 
             // if the dial lands on zero, this is considered 'passing' so we increment
             // if dial has gone over 99 we have also passed 0, so we increment and normalize the value
