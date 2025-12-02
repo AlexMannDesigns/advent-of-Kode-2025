@@ -17,16 +17,23 @@ fun main() {
         return start..end
     }
 
-    /**
-     * Tried to make a more kotlin-idiomatic solution here
-     * We calculate the max chunk size then loop from 1, to that limit, splitting the string into bigger, even
-     * chunks. If all the chunks match, then we have an invalid entry so we add it to the result
-     */
+    fun getInputList(input: List<String>): List<String> {
+        val inputAsString = input.firstOrNull() ?: throw IllegalArgumentException("Invalid input $input")
+        return inputAsString.split(",")
+            .filter { it.isNotEmpty() }
+            .map { it.trim() }
+    }
+
+    fun hasMatchingHalves(n: Long): Boolean =
+        n.toString().splitInHalfOrNull()?.let { halves ->
+            halves.first() == halves.last()
+        } ?: false
+
     fun hasRepeatingChunks(n: Long): Boolean {
         val s = n.toString()
-        val maxChunks = s.length / 2
+        val maxChunkSize = s.length / 2
 
-        return (1..maxChunks).any { divisor ->
+        return (1..maxChunkSize).any { divisor ->
             s.splitByXOrNull(divisor)?.let { chunks ->
                 chunks.all { it == chunks.first() }
             } ?: false
@@ -34,28 +41,13 @@ fun main() {
     }
 
     fun part2(input: List<String>): Long {
-        // all data is in first index of input
-        val inputString = input.firstOrNull() ?: throw IllegalArgumentException("Invalid input $input")
-        // split input by commas into a new list
-        val inputList = inputString.split(",").map { it.trim() }
-
-        // for this part we filter those results without matching 'chunks' rather than 'halves'
-        return inputList.flatMap { it.toLongRange() }
+        return getInputList(input).flatMap { it.toLongRange() }
             .filter(::hasRepeatingChunks)
             .sum()
     }
 
-    fun hasMatchingHalves(n: Long): Boolean =
-        n.toString().splitInHalfOrNull()?.let { it.first() == it.last() } ?: false
-
     fun part1(input: List<String>): Long {
-        // all data is in first index of input
-        val inputString = input.firstOrNull() ?: throw IllegalArgumentException("Invalid input $input")
-        // split input by commas into a new list
-        val inputList = inputString.split(",").map { it.trim() }
-        // with the input list we create an iterable of the entries as ranges, filtering out those which do not
-        // match the criteria, and summing the result
-        return inputList.flatMap { it.toLongRange() }
+        return getInputList(input).flatMap { it.toLongRange() }
             .filter(::hasMatchingHalves)
             .sum()
     }
