@@ -4,25 +4,33 @@ import println
 import readInput
 
 fun main() {
-    fun String.splitInHalfOrNull(): Pair<String, String>? {
-        if (this.isEmpty() || this.length % 2 != 0) {
-            return null
-        }
-        val middleIndex = this.lastIndex / 2
-        val firstHalf = this.substring(0..middleIndex)
-        val secondHalf = this.substring(middleIndex + 1..this.lastIndex)
-        return Pair(firstHalf, secondHalf)
+    fun String.splitInHalfOrNull(): List<String>? =
+        takeIf { this.isNotEmpty() && this.length % 2 == 0 }
+            ?.chunked(this.length / 2)
+
+    fun String.splitByXOrNull(divisor: Int): List<String>? =
+        takeIf { this.isNotEmpty() && this.length % divisor == 0 }
+            ?.chunked(divisor)
+
+    fun String.toLongRange(): LongRange {
+        val (start, end) = this.split("-").map { it.trim().toLong() }
+        return start..end
     }
 
-    fun String.splitByXOrNull(divisor: Int): List<String>? {
-        if (this.isEmpty() || this.length % divisor != 0 || this.length == divisor) {
-            return null
+    /**
+     * Tried to make a more kotlin-idiomatic solution here
+     * We calculate the max chunk size then loop from 1, to that limit, splitting the string into bigger, even
+     * chunks. If all the chunks match, then we have an invalid entry so we add it to the result
+     */
+    fun hasRepeatingChunks(n: Long): Boolean {
+        val s = n.toString()
+        val maxChunks = s.length / 2
+
+        return (1..maxChunks).any { divisor ->
+            s.splitByXOrNull(divisor)?.let { chunks ->
+                chunks.all { it == chunks.first() }
+            } ?: false
         }
-        val result = mutableListOf<String>()
-        for (offset in 0..this.lastIndex step divisor) {
-            result.add(this.substring(offset, offset + divisor))
-        }
-        return result
     }
 
     fun part2(input: List<String>): Long {
@@ -30,52 +38,26 @@ fun main() {
         val inputString = input.firstOrNull() ?: throw IllegalArgumentException("Invalid input $input")
         // split input by commas into a new list
         val inputList = inputString.split(",").map { it.trim() }
-        // setup result list
-        val result: MutableList<Long> = mutableListOf()
-        // loop through the list, split by '-' and build a range with the first and last
-        for (rangeAsString in inputList) {
-            val rangeLimits = rangeAsString.split("-").map { it.trim().toLong() }
-            // loop all numbers in range
-            for (candidate in rangeLimits.first()..rangeLimits.last()) {
-                // create string from candidate and break into a list of evenly sized strings
-                // first, a list of singles, e.g. "123456" becomes [ "1", "2", "3", "4", "5", "6" ]
-                // then pairs, i.e. [ "12", "34", "56" ]
-                // trios... etc
-                for (divisor in 1..(candidate.toString().length / 2)) {
-                    val candidateList = candidate.toString().splitByXOrNull(divisor)
-                    // if string can be evenly split by divisor, check all list entries match and add to result if so
-                    if (candidateList != null && candidateList.all { it == candidateList.first() }) {
-                        result.add(candidate)
-                        break
-                    }
-                }
-            }
-        }
-        // return the sum of the result list
-        return result.sum()
+
+        // for this part we filter those results without matching 'chunks' rather than 'halves'
+        return inputList.flatMap { it.toLongRange() }
+            .filter(::hasRepeatingChunks)
+            .sum()
     }
+
+    fun hasMatchingHalves(n: Long): Boolean =
+        n.toString().splitInHalfOrNull()?.let { it.first() == it.last() } ?: false
 
     fun part1(input: List<String>): Long {
         // all data is in first index of input
         val inputString = input.firstOrNull() ?: throw IllegalArgumentException("Invalid input $input")
         // split input by commas into a new list
         val inputList = inputString.split(",").map { it.trim() }
-        // setup result list
-        val result: MutableList<Long> = mutableListOf()
-        // loop through the list, split by '-' and build a range with the first and last
-        for (rangeAsString in inputList) {
-            val rangeLimits = rangeAsString.split("-").map { it.trim().toLong() }
-            for (candidate in rangeLimits.first()..rangeLimits.last()) {
-                // for each number in range, convert the number to a string, and split into even halves if possible
-                val candidateAsHalves = candidate.toString().splitInHalfOrNull()
-                // if the halves are an exact match, add the candidate to the result list
-                if (candidateAsHalves != null && candidateAsHalves.first == candidateAsHalves.second) {
-                    result.add(candidate)
-                }
-            }
-        }
-        // return the sum of the result list
-        return result.sum()
+        // with the input list we create an iterable of the entries as ranges, filtering out those which do not
+        // match the criteria, and summing the result
+        return inputList.flatMap { it.toLongRange() }
+            .filter(::hasMatchingHalves)
+            .sum()
     }
 
     // Read the input from the `src/input/Day0x.txt` file.
