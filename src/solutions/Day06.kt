@@ -5,10 +5,6 @@ import readInput
 import readInputNoTrim
 
 fun main() {
-    fun addValues(a: Long, b: Long): Long = a + b
-
-    fun multiplyValues(a: Long, b: Long): Long = a * b
-
     fun checkInBounds(input: List<String>, row: Int, col: Int): Boolean =
         row <= input.lastIndex && col <= input[row].lastIndex
 
@@ -34,18 +30,6 @@ fun main() {
         throw IllegalArgumentException("Should be unreachable")
     }
 
-    fun computeBlock(operator: String, blockNumberList: MutableList<Long>): Long {
-        var sum = blockNumberList.removeAt(0)
-        for (number in blockNumberList) {
-            sum = if (operator == "+") {
-                addValues(sum, number)
-            } else {
-                multiplyValues(sum, number)
-            }
-        }
-        return sum
-    }
-
     fun part2(rawInput: List<String>): Long {
         val startTime = System.currentTimeMillis()
 
@@ -63,7 +47,7 @@ fun main() {
         while (idx < longestLineLength) {
             val operator = operators[operatorIdx++]
             val (blockNumberList, i) = getCurrentBlock(idx, numberInput, longestLineLength)
-            total += computeBlock(operator, blockNumberList)
+            total += blockNumberList.reduce { a, b -> if (operator == "+") { a + b } else { a * b } }
             idx = i + 1
         }
 
