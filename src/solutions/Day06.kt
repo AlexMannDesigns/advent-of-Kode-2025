@@ -53,7 +53,7 @@ fun main() {
         // with untrimmed input we end up with an empty line at the end which should be dropped
         input.removeAt(input.lastIndex)
 
-        val operators = input.removeAt(input.lastIndex).trim().split("[\\s]+".toRegex())
+        val operators = input.removeAt(input.lastIndex).trim().split(' ').map { it.trim() }.filter { it.isNotEmpty() }
         val numberInput = input.subList(0, input.size)
         val longestLineLength = numberInput.maxOfOrNull { line -> line.length } ?: throw Exception("Error in input")
 
@@ -74,7 +74,7 @@ fun main() {
     fun part1(input: List<String>): Long {
         val startTime = System.currentTimeMillis()
 
-        val numbersMatrix = input.map { line -> line.trim().split("[\\s]+".toRegex()).map { it.trim() } }
+        val numbersMatrix = input.map { line -> line.split(' ').map { it.trim() }.filter { it.isNotEmpty() } }
 
         var result = 0L
         for ((colIdx, _) in numbersMatrix[0].withIndex()) {
