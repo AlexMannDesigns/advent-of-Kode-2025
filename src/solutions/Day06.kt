@@ -79,8 +79,8 @@ fun main() {
         var result = 0L
         for ((colIdx, _) in numbersMatrix[0].withIndex()) {
             val operation = numbersMatrix.last()[colIdx]
-            var columnSum = numbersMatrix[0][colIdx].toLong()
-            for (rowIdx in 1 until numbersMatrix.size - 1) {
+            var columnSum = numbersMatrix.first()[colIdx].toLong()
+            for (rowIdx in 1 until numbersMatrix.lastIndex) {
                 columnSum = if (operation == "+") {
                     addValues(columnSum, numbersMatrix[rowIdx][colIdx].toLong())
                 } else {
