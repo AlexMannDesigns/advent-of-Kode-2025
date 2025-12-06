@@ -76,19 +76,13 @@ fun main() {
 
         val numbersMatrix = input.map { line -> line.split(' ').map { it.trim() }.filter { it.isNotEmpty() } }
 
-        var result = 0L
-        for ((colIdx, _) in numbersMatrix[0].withIndex()) {
-            val operation = numbersMatrix.last()[colIdx]
-            var columnSum = numbersMatrix.first()[colIdx].toLong()
-            for (rowIdx in 1 until numbersMatrix.lastIndex) {
-                columnSum = if (operation == "+") {
-                    addValues(columnSum, numbersMatrix[rowIdx][colIdx].toLong())
-                } else {
-                    multiplyValues(columnSum, numbersMatrix[rowIdx][colIdx].toLong())
+        val result = numbersMatrix.first().mapIndexed { colIdx, _ ->
+            buildList {
+                for (rowIdx in 0 until numbersMatrix.lastIndex) {
+                    add(numbersMatrix[rowIdx][colIdx].toLong())
                 }
-            }
-            result += columnSum
-        }
+            }.reduce { a, b -> if (numbersMatrix.last()[colIdx] == "+") { a + b } else { a * b } }
+        }.sum()
 
         println("Time taken: ${System.currentTimeMillis() - startTime} ms.")
         return result
