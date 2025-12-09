@@ -6,7 +6,7 @@ import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
-data class Point3D(val x: Double, val y: Double, val z: Double) {
+private data class Point3D(val x: Double, val y: Double, val z: Double) {
     companion object {
         fun fromList(list: List<Int>): Point3D {
             if (list.isEmpty() || list.size != 3) {
@@ -17,7 +17,7 @@ data class Point3D(val x: Double, val y: Double, val z: Double) {
     }
 }
 
-data class Distance(val point1: Point3D, val point2: Point3D, val distance: Int)
+private data class Distance(val point1: Point3D, val point2: Point3D, val distance: Int)
 
 fun main() {
     fun calculateEuclideanDistance(a: Point3D, b: Point3D): Int =
@@ -54,6 +54,8 @@ fun main() {
         return result
     }
 
+    // TODO do this a tree, rather than a matrix
+    // https://dev.to/wolfof420street/trees-in-kotlin-a-comprehensive-guide-2fea
     fun part1(input: List<String>): Int {
         val startTime = System.currentTimeMillis()
 
