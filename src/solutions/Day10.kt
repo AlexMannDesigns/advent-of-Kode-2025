@@ -6,6 +6,21 @@ import readInput
 private data class Machine(val lights: List<Int>, val buttons: List<List<Int>>)
 
 fun main() {
+    fun calculatePresses(lights: List<Int>, buttonMatrix: List<List<Int>>): Int {
+        // first we see if any individual button press gets us to the solution
+        if (buttonMatrix.any { it == lights }) return 1
+
+        // then we try any two buttons together, then 3, 4 etc
+        for (numButtons in 2..buttonMatrix.size) {
+            println(numButtons)
+            // sum columns for every button combo
+            // TODO research a good algorithm for this
+            // if we have odd or even values in the correct positions, we return num buttons
+
+        }
+        throw IllegalArgumentException("No valid combo of buttons available for lights: $lights and buttons: $buttonMatrix")
+    }
+
     fun part2(input: List<String>): Long {
         val startTime = System.currentTimeMillis()
 
@@ -32,24 +47,16 @@ fun main() {
         // let's organise the data into a matrix with row of 0s and 1s
         // we are trying to find the smallest combo of rows, whose columns have an odd number where lights should be on
         // and even number where lights should be off (note: 0 is an even number)
-        for (machine in machinesList) {
-            val buttonMatrix = machine.buttons.map { button ->
-                (0..<machine.lights.size).map { i -> if (i in button) 1 else 0 }
-            }
-            println(machine.buttons)
-            println("${machine.lights} = lights")
-            for (row in buttonMatrix) {
-                println(row)
-            }
-            println()
-
-            // so now we need to some the columns, starting with individual rows, then pairs of rows, threes, etc,
-            // until we get a sum which is odd and even in the correct columns.
+        val result = machinesList.sumOf { machine ->
+            calculatePresses(
+                machine.lights,
+                machine.buttons.map { button -> (0..<machine.lights.size).map { i -> if (i in button) 1 else 0 } },
+            )
         }
 
         println("Time taken: ${System.currentTimeMillis() - startTime} ms.")
         // the result to return is the sum of the fewest number of button presses to turn on each machine
-        return input.size.toLong()
+        return result.toLong()
     }
 
     // Read the input from the `src/input/Day0x.txt` file.
