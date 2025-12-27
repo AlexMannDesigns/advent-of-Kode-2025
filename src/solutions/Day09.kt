@@ -14,47 +14,69 @@ private data class Point(val x: Long, val y: Long) {
     }
 }
 
-private data class Rectangle(val a: Point, val b: Point, val c: Point, val d: Point, val area: Long) {
+private data class Rectangle(
+    val a: Point,
+    val b: Point,
+    val c: Point,
+    val d: Point,
+    val area: Long,
+    val xRangeStart: Long,
+    val xRangeEnd: Long,
+    val yRangeStart: Long,
+    val yRangeEnd: Long
+) {
     companion object {
-        fun fromOppositePoints(a: Point, b: Point, area: Long) =
-            Rectangle(a, b, Point(a.x, b.y), Point(b.x, a.y), area)
+        fun fromOppositePoints(a: Point, b: Point, area: Long): Rectangle {
+            val i = Point(a.x, b.y)
+            val j = Point(b.x, a.y)
+
+            val xRangeStart = minOf(a.x, b.x) + 1
+            val xRangeEnd = maxOf(a.x, b.x) - 1
+            val yRangeStart = minOf(a.y, b.y) + 1
+            val yRangeEnd = maxOf(a.y, b.y) - 1
+
+            return Rectangle(a, i, b, j, area, xRangeStart, xRangeEnd, yRangeStart, yRangeEnd)
+        }
     }
 }
 
-private data class VerticalEdge(val a: Point, val b: Point)
+private data class Edge(val a: Point, val b: Point)
 
 fun main() {
-    fun calculateArea(a: Point, b: Point): Long {
-        val first = if (a.x >= b.x) a.x - b.x + 1 else b.x - a.x + 1
-        val second = if (a.y >= b.y) a.y - b.y + 1 else b.y - a.y + 1
-        return first * second
-    }
+    fun calculateArea(a: Point, b: Point): Long =
+        (maxOf(a.x, b.x) - minOf(a.x, b.x) + 1) * (maxOf(a.y, b.y) - minOf(a.y, b.y) + 1)
 
-    fun pointInPolygon(point: Point, verticalEdges: List<VerticalEdge>): Boolean {
-        var crossings = 0
-        for (edge in verticalEdges) {
-            if (point == edge.a || point == edge.b) {
-                return true
-            }
-            val y1 = edge.a.y
-            val y2 = edge.b.y
+    fun rangesOverlap(aStart: Long, aEnd: Long, bStart: Long, bEnd: Long) = aStart <= bEnd && bStart <= aEnd
 
-            if (point.y in minOf(y1, y2)..<maxOf(y1, y2) && point.x < edge.a.x) {
-                crossings++
-            }
-        }
-        return crossings % 2 == 1
-    }
+    fun hasOverlap(
+        edgeRangeStart: Long,
+        edgeRangeEnd: Long,
+        edgeCoord: Long,
+        rectangleRange1Start: Long,
+        rectangleRange1End: Long,
+        rectangleRange2Start: Long,
+        rectangleRange2End: Long
+    ) = rangesOverlap(edgeRangeStart, edgeRangeEnd, rectangleRange1Start, rectangleRange1End)
+                && edgeCoord >= rectangleRange2Start && edgeCoord <= rectangleRange2End
 
-
-    fun checkPoints(rectangle: Rectangle, verticalEdges: List<VerticalEdge>): Boolean {
-        val pointAInPolygon = pointInPolygon(rectangle.a, verticalEdges)
-        val pointBInPolygon = pointInPolygon(rectangle.b, verticalEdges)
-        val pointCInPolygon = pointInPolygon(rectangle.c, verticalEdges)
-        val pointDInPolygon = pointInPolygon(rectangle.d, verticalEdges)
-        return pointAInPolygon && pointBInPolygon && pointCInPolygon && pointDInPolygon
-    }
-
+    fun hasNoOverlaps(rectangle: Rectangle, verticalEdges: List<Edge>, horizontalEdges: List<Edge>) =
+        !(horizontalEdges.any { edge -> hasOverlap(
+            minOf(edge.a.x, edge.b.x),
+            maxOf(edge.a.x, edge.b.x),
+            edge.a.y,
+            rectangle.xRangeStart,
+            rectangle.xRangeEnd,
+            rectangle.yRangeStart,
+            rectangle.yRangeEnd,
+        )} || verticalEdges.any { edge -> hasOverlap(
+            minOf(edge.a.y, edge.b.y),
+            maxOf(edge.a.y, edge.b.y),
+            edge.a.x,
+            rectangle.yRangeStart,
+            rectangle.yRangeEnd,
+            rectangle.xRangeStart,
+            rectangle.xRangeEnd,
+        )})
 
     fun part2(input: List<String>): Long {
         val startTime = System.currentTimeMillis()
@@ -64,35 +86,27 @@ fun main() {
             points.drop(index + 1).map { b -> Rectangle.fromOppositePoints(a, b,calculateArea(a, b)) }
         }.sortedByDescending { it.area }
 
-        val verticalEdges = points.mapIndexedNotNull { i, point ->
-            if (i < points.lastIndex && point.x == points[i + 1].x) {
-                VerticalEdge(point, points[i + 1])
-            } else {
-                null
-            }
-        }.toMutableList()
+        val verticalEdges = mutableListOf<Edge>()
+        val horizontalEdges = mutableListOf<Edge>()
 
-        if (points.first().x == points.last().x) {
-            verticalEdges.add(VerticalEdge(points.last(), points.first()))
+        points.mapIndexed { i, point ->
+            if (i < points.lastIndex && point.x == points[i + 1].x) {
+                verticalEdges.add(Edge(point, points[i + 1]))
+            } else if (i < points.lastIndex) {
+                horizontalEdges.add(Edge(point, points[i + 1]))
+            }
         }
 
-        // TODO now add a check that none of the sides of the rectangle cross the polygon boundary
-        // so, we do need the horizontal edges as well as the vertical ones
-        val result = rectangles.first { rectangle -> checkPoints(rectangle, verticalEdges) }.area
+        if (points.first().x == points.last().x) {
+            verticalEdges.add(Edge(points.last(), points.first()))
+        } else {
+            horizontalEdges.add(Edge(points.last(), points.first()))
+        }
 
-//        val checkLargest = rectangles.first { it.a.x == 9L && it.a.y == 5L && it.b.x == 2L && it.b.y == 3L }
-//        println(checkLargest)
-//        isInPolygon(checkLargest, verticalEdges)
-        // cast a ray from any corner not in the edges. If that ray crosses the edges an odd number of times, it is in the polygon
-        // we need to create a new 'vertical edge' object, which contains adjacent points that have the same x value.
-        // we use a list of VerticalEdge objects instead of every boundary point of the polygon.
-        // then, for each rectangle, we take each of the 4 corner points and loop through the VerticalEdge list, checking:
-        // if the corner x is less than the VerticalEdge x AND the corner y value is between the two VerticalEdge y values
-        // ie: if (corner.x < vEdge.a.x && corner.y in minOf(vEdge.a.y, vEdge.b.y) until maxOf(vEdge.a.y, vEdge.b.y)) { intersection++ }
-        // NB: each corner needs its own crossing count. If any corner is out of bounds, the rectangle is invalid.
+        val result = rectangles.first { rectangle -> hasNoOverlaps(rectangle, verticalEdges, horizontalEdges) }
 
         println("Time taken: ${System.currentTimeMillis() - startTime} ms.")
-        return result
+        return result.area
     }
 
     fun part1(input: List<String>): Long {
@@ -109,6 +123,7 @@ fun main() {
 
     // Read the input from the `src/input/Day0x.txt` file.
     val input = readInput("Day09")
-    //part1(input).println()
+    val testInput = readInput("test_Day09")
+    part1(input).println()
     part2(input).println()
 }
