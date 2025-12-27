@@ -17,8 +17,6 @@ private data class Point(val x: Long, val y: Long) {
 private data class Rectangle(
     val a: Point,
     val b: Point,
-    val c: Point,
-    val d: Point,
     val area: Long,
     val xRangeStart: Long,
     val xRangeEnd: Long,
@@ -30,9 +28,6 @@ private data class Rectangle(
             (maxOf(a.x, b.x) - minOf(a.x, b.x) + 1) * (maxOf(a.y, b.y) - minOf(a.y, b.y) + 1)
 
         fun fromOppositePoints(a: Point, b: Point): Rectangle {
-            val i = Point(a.x, b.y)
-            val j = Point(b.x, a.y)
-
             val xRangeStart = minOf(a.x, b.x) + 1
             val xRangeEnd = maxOf(a.x, b.x) - 1
             val yRangeStart = minOf(a.y, b.y) + 1
@@ -40,7 +35,7 @@ private data class Rectangle(
 
             val area = calculateArea(a, b)
 
-            return Rectangle(a, i, b, j, area, xRangeStart, xRangeEnd, yRangeStart, yRangeEnd)
+            return Rectangle(a, b, area, xRangeStart, xRangeEnd, yRangeStart, yRangeEnd)
         }
     }
 }
@@ -65,22 +60,24 @@ fun main() {
 
     fun hasNoOverlaps(rectangle: Rectangle, verticalEdges: List<Edge>, horizontalEdges: List<Edge>) =
         !(horizontalEdges.any { edge -> hasOverlap(
-            minOf(edge.a.x, edge.b.x),
-            maxOf(edge.a.x, edge.b.x),
-            edge.a.y,
-            rectangle.xRangeStart,
-            rectangle.xRangeEnd,
-            rectangle.yRangeStart,
-            rectangle.yRangeEnd,
-        )} || verticalEdges.any { edge -> hasOverlap(
-            minOf(edge.a.y, edge.b.y),
-            maxOf(edge.a.y, edge.b.y),
-            edge.a.x,
-            rectangle.yRangeStart,
-            rectangle.yRangeEnd,
-            rectangle.xRangeStart,
-            rectangle.xRangeEnd,
-        )})
+                minOf(edge.a.x, edge.b.x),
+                maxOf(edge.a.x, edge.b.x),
+                edge.a.y,
+                rectangle.xRangeStart,
+                rectangle.xRangeEnd,
+                rectangle.yRangeStart,
+                rectangle.yRangeEnd,
+            )
+        } || verticalEdges.any { edge -> hasOverlap(
+                minOf(edge.a.y, edge.b.y),
+                maxOf(edge.a.y, edge.b.y),
+                edge.a.x,
+                rectangle.yRangeStart,
+                rectangle.yRangeEnd,
+                rectangle.xRangeStart,
+                rectangle.xRangeEnd,
+            )
+        })
 
     fun createBoundaryEdgeLists(points: List<Point>): Pair<List<Edge>, List<Edge>> =
         points.zipWithNext()
