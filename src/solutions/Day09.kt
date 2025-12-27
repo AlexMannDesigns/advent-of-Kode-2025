@@ -26,7 +26,10 @@ private data class Rectangle(
     val yRangeEnd: Long
 ) {
     companion object {
-        fun fromOppositePoints(a: Point, b: Point, area: Long): Rectangle {
+        private fun calculateArea(a: Point, b: Point): Long =
+            (maxOf(a.x, b.x) - minOf(a.x, b.x) + 1) * (maxOf(a.y, b.y) - minOf(a.y, b.y) + 1)
+
+        fun fromOppositePoints(a: Point, b: Point): Rectangle {
             val i = Point(a.x, b.y)
             val j = Point(b.x, a.y)
 
@@ -34,6 +37,8 @@ private data class Rectangle(
             val xRangeEnd = maxOf(a.x, b.x) - 1
             val yRangeStart = minOf(a.y, b.y) + 1
             val yRangeEnd = maxOf(a.y, b.y) - 1
+
+            val area = calculateArea(a, b)
 
             return Rectangle(a, i, b, j, area, xRangeStart, xRangeEnd, yRangeStart, yRangeEnd)
         }
@@ -43,10 +48,9 @@ private data class Rectangle(
 private data class Edge(val a: Point, val b: Point)
 
 fun main() {
-    fun calculateArea(a: Point, b: Point): Long =
-        (maxOf(a.x, b.x) - minOf(a.x, b.x) + 1) * (maxOf(a.y, b.y) - minOf(a.y, b.y) + 1)
-
     fun rangesOverlap(aStart: Long, aEnd: Long, bStart: Long, bEnd: Long) = aStart <= bEnd && bStart <= aEnd
+
+    fun coordInRange(coord: Long, rangeStart: Long, rangeEnd: Long) = coord in rangeStart..rangeEnd
 
     fun hasOverlap(
         edgeRangeStart: Long,
@@ -57,7 +61,7 @@ fun main() {
         rectangleRange2Start: Long,
         rectangleRange2End: Long
     ) = rangesOverlap(edgeRangeStart, edgeRangeEnd, rectangleRange1Start, rectangleRange1End)
-                && edgeCoord >= rectangleRange2Start && edgeCoord <= rectangleRange2End
+                && coordInRange(edgeCoord, rectangleRange2Start, rectangleRange2End)
 
     fun hasNoOverlaps(rectangle: Rectangle, verticalEdges: List<Edge>, horizontalEdges: List<Edge>) =
         !(horizontalEdges.any { edge -> hasOverlap(
@@ -78,32 +82,27 @@ fun main() {
             rectangle.xRangeEnd,
         )})
 
+    fun createBoundaryEdgeLists(points: List<Point>): Pair<List<Edge>, List<Edge>> =
+        points.zipWithNext()
+            .plus(points.last() to points.first())
+            .map { (a, b) -> Edge(a, b) }
+            .partition { edge -> edge.a.x == edge.b.x }
+
     fun part2(input: List<String>): Long {
         val startTime = System.currentTimeMillis()
 
         val points = input.map { line -> Point.fromList(line.split(',').map { it.toLong() }) }
-        val rectangles = points.flatMapIndexed { index, a ->
-            points.drop(index + 1).map { b -> Rectangle.fromOppositePoints(a, b,calculateArea(a, b)) }
-        }.sortedByDescending { it.area }
 
-        val verticalEdges = mutableListOf<Edge>()
-        val horizontalEdges = mutableListOf<Edge>()
+        val (verticalEdges, horizontalEdges) = createBoundaryEdgeLists(points)
 
-        points.mapIndexed { i, point ->
-            if (i < points.lastIndex && point.x == points[i + 1].x) {
-                verticalEdges.add(Edge(point, points[i + 1]))
-            } else if (i < points.lastIndex) {
-                horizontalEdges.add(Edge(point, points[i + 1]))
+        val result = points.flatMapIndexed { index, a ->
+            points.drop(index + 1).map { b ->
+                Rectangle.fromOppositePoints(a, b)
             }
+        }.sortedByDescending { it.area }
+            .first { rectangle ->
+                hasNoOverlaps(rectangle, verticalEdges, horizontalEdges)
         }
-
-        if (points.first().x == points.last().x) {
-            verticalEdges.add(Edge(points.last(), points.first()))
-        } else {
-            horizontalEdges.add(Edge(points.last(), points.first()))
-        }
-
-        val result = rectangles.first { rectangle -> hasNoOverlaps(rectangle, verticalEdges, horizontalEdges) }
 
         println("Time taken: ${System.currentTimeMillis() - startTime} ms.")
         return result.area
@@ -113,12 +112,15 @@ fun main() {
         val startTime = System.currentTimeMillis()
 
         val points = input.map { line -> Point.fromList(line.split(',').map { it.toLong() }) }
-        val areas = points.flatMapIndexed { index, a ->
-            points.drop(index + 1).map { b -> calculateArea(a, b) }
-        }.sorted()
+        val result = points.flatMapIndexed { index, a ->
+            points.drop(index + 1).map { b ->
+                Rectangle.fromOppositePoints(a, b)
+            }
+        }.maxByOrNull { it.area }?.area
+            ?: throw IllegalArgumentException("No result found, check input")
 
         println("Time taken: ${System.currentTimeMillis() - startTime} ms.")
-        return areas.last()
+        return result
     }
 
     // Read the input from the `src/input/Day0x.txt` file.
