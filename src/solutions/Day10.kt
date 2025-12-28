@@ -44,11 +44,12 @@ fun main() {
             createCombos(buttonMatrix, i + 1, current, result)
             current.removeLast()
         }
-        return result.sortedBy { it.presses }
+        return result
     }
 
     fun calculateMinPresses(machine: Machine) =
         createCombos(machine.buttons, 0, mutableListOf(), mutableListOf())
+            .sortedBy { it.presses }
             .first { combo -> combo.result == machine.lights }.presses
 
 //    fun part2(input: List<String>): Long {
