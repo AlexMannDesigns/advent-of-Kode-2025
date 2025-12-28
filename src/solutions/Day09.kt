@@ -92,17 +92,16 @@ fun main() {
 
         val (verticalEdges, horizontalEdges) = createBoundaryEdgeLists(points)
 
-        val result = points.flatMapIndexed { index, a ->
+        val rectangles = points.flatMapIndexed { index, a ->
             points.drop(index + 1).map { b ->
                 Rectangle.fromOppositePoints(a, b)
             }
         }.sortedByDescending { it.area }
-            .first { rectangle ->
-                hasNoOverlaps(rectangle, verticalEdges, horizontalEdges)
-        }
+
+        val result = rectangles.first { rectangle -> hasNoOverlaps(rectangle, verticalEdges, horizontalEdges) }.area
 
         println("Time taken: ${System.currentTimeMillis() - startTime} ms.")
-        return result.area
+        return result
     }
 
     fun part1(input: List<String>): Long {

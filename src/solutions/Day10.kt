@@ -3,64 +3,74 @@ package solutions
 import println
 import readInput
 
-private data class Machine(val lights: List<Int>, val buttons: List<List<Int>>)
+private data class Machine(val lights: Int, val buttons: List<Int>) {
+    companion object {
+        // converts int list of 0s and 1s to the number it represents as binary
+        private fun List<Int>.binaryListAsInt() = this.joinToString(separator = "").toInt(2)
+
+        private fun createLightsBinaryList(line: String): List<Int> =
+            line.substring(line.indexOfFirst { it == '[' } + 1, line.indexOfFirst { it == ']' }).map { if (it == '#') 1 else 0 }
+
+        private fun createButtonsBinaryList(line: String): List<List<Int>> =
+            line.substring(line.indexOfFirst { it == '(' } + 1, line.indexOfLast { it == ')' })
+                .split(") (")
+                .map { buttonString -> buttonString.split(',').let { it.map { c -> c.toInt() } } }
+
+        private fun buttonAsBinaryList(button: List<Int>, lightsSize: Int): List<Int> =
+            (0..<lightsSize).map { i -> if (i in button) 1 else 0 }
+
+        fun fromInputLine(line: String): Machine {
+            val lights = createLightsBinaryList(line)
+            return Machine(
+                lights = lights.binaryListAsInt(),
+                buttons = createButtonsBinaryList(line).map { button -> buttonAsBinaryList(button, lights.size).binaryListAsInt() },
+            )
+        }
+    }
+}
+
+data class PressSequence(val result: Int, val presses: Int)
 
 fun main() {
-    fun calculatePresses(lights: List<Int>, buttonMatrix: List<List<Int>>): Int {
-        // first we see if any individual button press gets us to the solution
-        if (buttonMatrix.any { it == lights }) return 1
-
-        // then we try any two buttons together, then 3, 4 etc
-        for (numButtons in 2..buttonMatrix.size) {
-            println(numButtons)
-            // sum columns for every button combo
-            // TODO research a good algorithm for this
-            // if we have odd or even values in the correct positions, we return num buttons
-
+    fun createCombos(buttonMatrix: List<Int>, start: Int, current: MutableList<Int>, result: MutableList<PressSequence>): List<PressSequence> {
+        if (current.isNotEmpty()) {
+            val presses = current.size // num of presses in sequence
+            val sequenceResult = current.reduce { a, b -> a xor b } // xor buttons together to create result
+            result.add(PressSequence(sequenceResult, presses))
         }
-        throw IllegalArgumentException("No valid combo of buttons available for lights: $lights and buttons: $buttonMatrix")
+
+        for (i in start..buttonMatrix.lastIndex) {
+            current.add(buttonMatrix[i])
+            createCombos(buttonMatrix, i + 1, current, result)
+            current.removeLast()
+        }
+        return result.sortedBy { it.presses }
     }
 
-    fun part2(input: List<String>): Long {
-        val startTime = System.currentTimeMillis()
+    fun calculateMinPresses(machine: Machine) =
+        createCombos(machine.buttons, 0, mutableListOf(), mutableListOf())
+            .first { combo -> combo.result == machine.lights }.presses
 
-        println("Time taken: ${System.currentTimeMillis() - startTime} ms.")
-        return input.size.toLong()
-    }
+//    fun part2(input: List<String>): Long {
+//        val startTime = System.currentTimeMillis()
+//
+//        println("Time taken: ${System.currentTimeMillis() - startTime} ms.")
+//        return input.size.toLong()
+//    }
 
-    fun part1(input: List<String>): Long {
+    fun part1(input: List<String>): Int {
         val startTime = System.currentTimeMillis()
 
         // parse input into a list of data classes
-        val machinesList = input.map { line ->
-            Machine(
-                lights = line
-                .substring(line.indexOfFirst { it == '[' } + 1, line.indexOfFirst { it == ']' })
-                .map { if (it == '#') 1 else 0 },
-                buttons = line
-                .substring(line.indexOfFirst { it == '(' } + 1, line.indexOfLast { it == ')' })
-                .split(") (")
-                .map { buttonString -> buttonString.split(',').let { it.map { c -> c.toInt() } } }
-            )
-        }
-
-        // let's organise the data into a matrix with row of 0s and 1s
-        // we are trying to find the smallest combo of rows, whose columns have an odd number where lights should be on
-        // and even number where lights should be off (note: 0 is an even number)
-        val result = machinesList.sumOf { machine ->
-            calculatePresses(
-                machine.lights,
-                machine.buttons.map { button -> (0..<machine.lights.size).map { i -> if (i in button) 1 else 0 } },
-            )
-        }
+        val result = input.map { line -> Machine.fromInputLine(line) }.sumOf { machine -> calculateMinPresses(machine) }
 
         println("Time taken: ${System.currentTimeMillis() - startTime} ms.")
         // the result to return is the sum of the fewest number of button presses to turn on each machine
-        return result.toLong()
+        return result
     }
 
     // Read the input from the `src/input/Day0x.txt` file.
-    val input = readInput("test_Day10")
+    val input = readInput("Day10")
     part1(input).println()
 //    part2(input).println()
 }
