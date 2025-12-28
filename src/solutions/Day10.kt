@@ -16,14 +16,14 @@ private data class Machine(val lights: Int, val buttons: List<Int>) {
                 .split(") (")
                 .map { buttonString -> buttonString.split(',').let { it.map { c -> c.toInt() } } }
 
-        private fun buttonAsBinaryList(button: List<Int>, lightsSize: Int): List<Int> =
-            (0..<lightsSize).map { i -> if (i in button) 1 else 0 }
+        private fun buttonAsBinary(button: List<Int>, lightsSize: Int): Int =
+            (0..<lightsSize).map { i -> if (i in button) 1 else 0 }.binaryListAsInt()
 
         fun fromInputLine(line: String): Machine {
             val lights = createLightsBinaryList(line)
             return Machine(
                 lights = lights.binaryListAsInt(),
-                buttons = createButtonsBinaryList(line).map { button -> buttonAsBinaryList(button, lights.size).binaryListAsInt() },
+                buttons = createButtonsBinaryList(line).map { button -> buttonAsBinary(button, lights.size) },
             )
         }
     }
@@ -32,10 +32,17 @@ private data class Machine(val lights: Int, val buttons: List<Int>) {
 data class PressSequence(val result: Int, val presses: Int)
 
 fun main() {
+    fun part2(input: List<String>): Long {
+        val startTime = System.currentTimeMillis()
+
+        println("Time taken: ${System.currentTimeMillis() - startTime} ms.")
+        return input.size.toLong()
+    }
+
     fun createCombos(buttonMatrix: List<Int>, start: Int, current: MutableList<Int>, result: MutableList<PressSequence>): List<PressSequence> {
         if (current.isNotEmpty()) {
-            val presses = current.size // num of presses in sequence
-            val sequenceResult = current.reduce { a, b -> a xor b } // xor buttons together to create result
+            val presses = current.size
+            val sequenceResult = current.reduce { a, b -> a xor b }
             result.add(PressSequence(sequenceResult, presses))
         }
 
@@ -52,17 +59,9 @@ fun main() {
             .sortedBy { it.presses }
             .first { combo -> combo.result == machine.lights }.presses
 
-//    fun part2(input: List<String>): Long {
-//        val startTime = System.currentTimeMillis()
-//
-//        println("Time taken: ${System.currentTimeMillis() - startTime} ms.")
-//        return input.size.toLong()
-//    }
-
     fun part1(input: List<String>): Int {
         val startTime = System.currentTimeMillis()
 
-        // parse input into a list of data classes
         val result = input.map { line -> Machine.fromInputLine(line) }.sumOf { machine -> calculateMinPresses(machine) }
 
         println("Time taken: ${System.currentTimeMillis() - startTime} ms.")
